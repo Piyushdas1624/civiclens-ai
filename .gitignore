@@ -17,6 +17,14 @@ env/
 .idea/
 *.swp
 *.swo
-*~
-.coverage
-htmlcov/
+# App scratch & temporary files
+demo-video/
+backend/uploads/*
+!backend/uploads/.gitkeep
+*_DELIVERY*.md
+*_SUMMARY*.md
+HYPERFRAMES_*.md
+QUICK_REFERENCE.md
+TASK_COMPLETION_CHECKLIST.md
+VIDEO_FILE_FIX.md
+

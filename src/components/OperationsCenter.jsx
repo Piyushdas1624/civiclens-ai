@@ -103,7 +103,13 @@ export default function OperationsCenter({ highlightComplaintId, onHighlightCons
   }
 
   const formatDate = (date) => {
-    const d = new Date(date)
+    if (!date) return 'Recently'
+    let str = String(date)
+    if (!str.endsWith('Z') && !str.includes('+') && str.includes(' ')) {
+      str = str.replace(' ', 'T') + 'Z'
+    }
+    const d = new Date(str)
+    if (isNaN(d.getTime())) return String(date)
     return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
   

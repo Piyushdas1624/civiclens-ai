@@ -87,9 +87,15 @@ export default function ReportIssue() {
         image_base64: formData.image_base64 || null
       }
 
+      const customApiKey = sessionStorage.getItem('GEMINI_API_KEY')
+      const headers = { 'Content-Type': 'application/json' }
+      if (customApiKey) {
+        headers['X-Gemini-Api-Key'] = customApiKey
+      }
+
       const response = await fetch('/api/report', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload)
       })
 

@@ -26,46 +26,78 @@ MOCK_GEMINI_RESPONSE = {
 }
 
 
-def configure_gemini():
-    """Configure Gemini API."""
-    if not GEMINI_API_KEY:
-        print("⚠️ GEMINI_API_KEY not set, using mock responses")
+def configure_gemini(api_key: Optional[str] = None):
+    """Configure Gemini API with custom or default key."""
+    key = api_key or os.getenv("GEMINI_API_KEY", "")
+    if not key:
         return False
     
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
+        genai.configure(api_key=key)
         return True
     except Exception as e:
-        print(f"❌ Failed to configure Gemini: {str(e)}")
+        print(f"❌ Failed to configure Gemini with provided key: {str(e)}")
         return False
 
 
-def encode_image_to_base64(image_data: bytes) -> str:
-    """Encode image bytes to base64 string."""
-    return base64.standard_b64encode(image_data).decode("utf-8")
+def generate_dynamic_mock(description: str, location: Dict, weather: Dict) -> Dict:
+    """Generate realistic AI analysis when Gemini API key is not provided (Demo Mode)."""
+    desc_lower = description.lower()
+    
+    category = "other"
+    dept = "Other"
+    urgency = 55
+    explanation = ["Civic issue reported in public area", "Requires municipal inspection"]
+    
+    if any(w in desc_lower for w in ['wire', 'electric', 'voltage', 'transformer', 'pole', 'spark', 'light']):
+        category = "electrical"
+        dept = "Electrical"
+        urgency = 82
+        explanation = ["Public safety hazard involving electrical infrastructure", "Potential shock or fire risk in residential zone"]
+    elif any(w in desc_lower for w in ['pothole', 'road', 'street', 'crack', 'asphalt', 'tar', 'traffic']):
+        category = "road"
+        dept = "Roads"
+        urgency = 68
+        explanation = ["Road surface disruption affecting vehicular safety", "Possible hazard during high traffic hours"]
+    elif any(w in desc_lower for w in ['water', 'pipe', 'leak', 'drain', 'sewage', 'overflow', 'flood']):
+        category = "water"
+        dept = "Water"
+        urgency = 75
+        explanation = ["Water supply or drainage anomaly", "Potential structural contamination or wastage"]
+    elif any(w in desc_lower for w in ['garbage', 'trash', 'waste', 'smell', 'dump', 'bin', 'sanitat']):
+        category = "sanitation"
+        dept = "Sanitation"
+        urgency = 50
+        explanation = ["Public sanitation concern", "Requires scheduled departmental collection and cleanup"]
+
+    return {
+        "category": category,
+        "urgency_score": urgency,
+        "urgency_explanation": explanation,
+        "confidence": 0.88,
+        "professional_rewrite": f"Reported issue: {description.strip()}. Location: {location.get('address', 'Siliguri')}. Routed to {dept} department for official verification.",
+        "department": dept,
+        "duplicate_count": 0,
+        "duplicate_reason": None,
+        "citizen_message": f"Your report has been logged and assigned to the {dept} Department. Thank you for contributing to municipal safety."
+    }
 
 
 def analyze_issue(
     image_data: Optional[bytes],
     description: str,
     location: Dict[str, str],
-    weather: Dict[str, any]
+    weather: Dict[str, any],
+    custom_api_key: Optional[str] = None
 ) -> Dict:
     """
     Analyze a civic complaint using Gemini vision and reasoning.
-    
-    Args:
-        image_data: Raw image bytes (optional)
-        description: User's textual description
-        location: Location dict with ward, city, area
-        weather: Weather dict with temperature, rain, wind, etc.
-    
-    Returns:
-        Dict with analysis results
+    Falls back gracefully to dynamic demo analysis if no valid API key is present.
     """
-    if not configure_gemini():
-        print("📋 Using mock Gemini response for testing")
-        return MOCK_GEMINI_RESPONSE
+    if not configure_gemini(custom_api_key):
+        print("📋 Using dynamic demo response (No valid Gemini API key provided)")
+        return generate_dynamic_mock(description, location, weather)
+
     
     try:
         # Build context

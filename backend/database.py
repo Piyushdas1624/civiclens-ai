@@ -72,18 +72,19 @@ def save_complaint(
     """Save a complaint to the database."""
     with get_db() as conn:
         cursor = conn.cursor()
+        created_at_iso = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         cursor.execute("""
             INSERT INTO complaints (
                 image_url, description, location_lat, location_lng,
                 ward, city, category, urgency, confidence, department,
                 duplicate_count, professional_rewrite, reasoning, status,
-                image_hash, description_hash
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                image_hash, description_hash, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             image_url, description, location_lat, location_lng,
             ward, city, category, urgency, confidence, department,
             duplicate_count, professional_rewrite, reasoning, "open",
-            image_hash, description_hash
+            image_hash, description_hash, created_at_iso
         ))
         conn.commit()
         complaint_id = cursor.lastrowid

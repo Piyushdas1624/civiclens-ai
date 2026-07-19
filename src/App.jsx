@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Shield, Bell } from 'lucide-react'
+import { User, Shield, Bell, Key } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import ReportIssue from './components/ReportIssue'
 import OperationsCenter from './components/OperationsCenter'
 import SafetyDashboard from './components/SafetyDashboard'
 import InteractiveProjectPitch from './components/InteractiveProjectPitch'
 import NotificationPanel from './components/NotificationPanel'
+import ApiKeyModal from './components/ApiKeyModal'
 import { useNotifications } from './hooks/useNotifications'
 
 export default function App() {
@@ -14,6 +15,8 @@ export default function App() {
   const [userMode, setUserMode] = useState('citizen')
   const [currentTime, setCurrentTime] = useState(new Date())
   const [notifOpen, setNotifOpen] = useState(false)
+  const [keyModalOpen, setKeyModalOpen] = useState(false)
+  const [hasApiKey, setHasApiKey] = useState(!!sessionStorage.getItem('GEMINI_API_KEY'))
   // Expose a way for OperationsCenter to receive a highlight complaint id
   const [highlightComplaintId, setHighlightComplaintId] = useState(null)
 
@@ -31,6 +34,25 @@ export default function App() {
       setCurrentPage('report-issue')
     }
   }, [userMode, currentPage])
+
+  // Prompt key modal on first visit if no key is present
+  useEffect(() => {
+    const key = sessionStorage.getItem('GEMINI_API_KEY')
+    if (!key && !sessionStorage.getItem('DEMO_MODE_SEEN')) {
+      setKeyModalOpen(true)
+    }
+  }, [])
+
+  const handleSaveKey = (key) => {
+    sessionStorage.setItem('GEMINI_API_KEY', key)
+    sessionStorage.setItem('DEMO_MODE_SEEN', 'true')
+    setHasApiKey(true)
+  }
+
+  const handleUseDemoMode = () => {
+    sessionStorage.setItem('DEMO_MODE_SEEN', 'true')
+    setHasApiKey(false)
+  }
 
   // Navigate to a specific complaint from a notification
   const handleNavigateToComplaint = (complaintId) => {
@@ -80,11 +102,25 @@ export default function App() {
             {/* Empty space for desktop where sidebar holds logo */}
           </div>
           
-          <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-3 md:gap-5">
             {/* Live Clock */}
             <div className="hidden md:flex items-center text-sm font-mono text-slate-400 bg-slate-900/50 px-3 py-1.5 rounded-md border border-slate-800">
               {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </div>
+
+            {/* API Key Indicator / Trigger */}
+            <button
+              onClick={() => setKeyModalOpen(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                hasApiKey
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                  : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
+              }`}
+              title={hasApiKey ? 'Custom Gemini API Key active' : 'Click to set Gemini API Key'}
+            >
+              <Key size={12} />
+              <span className="hidden sm:inline">{hasApiKey ? 'Custom Key' : 'Demo Mode'}</span>
+            </button>
 
             {/* Notification Bell — wired up */}
             <div className="relative" onMouseDown={(e) => e.stopPropagation()}>
@@ -145,6 +181,15 @@ export default function App() {
           {renderPage()}
         </div>
       </main>
+
+      {/* Gemini API Key Modal */}
+      <ApiKeyModal
+        isOpen={keyModalOpen}
+        onClose={() => setKeyModalOpen(false)}
+        onSaveKey={handleSaveKey}
+        onUseDemoMode={handleUseDemoMode}
+      />
     </div>
   )
 }
+

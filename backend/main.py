@@ -4,7 +4,7 @@ import base64
 import io
 import time
 from typing import Optional
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Header
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -178,7 +178,7 @@ async def health():
 
 
 @app.post("/api/report", response_model=ComplaintResponse)
-async def report_issue(request: ReportIssueRequest):
+async def report_issue(request: ReportIssueRequest, x_gemini_api_key: Optional[str] = Header(None)):
     """
     Submit a new civic complaint with AI analysis.
     
@@ -277,7 +277,7 @@ async def report_issue(request: ReportIssueRequest):
                 print(f"✅ Rate limit check passed")
                 
                 print(f"🤖 Calling Gemini AI for analysis...")
-                analysis = analyze_issue(image_data, request.description, location, weather)
+                analysis = analyze_issue(image_data, request.description, location, weather, custom_api_key=x_gemini_api_key)
                 record_api_call_usage("gemini")
                 
                 # Step 8: Cache AI response
