@@ -51,7 +51,7 @@ app.add_middleware(
     ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "x-gemini-api-key", "X-Gemini-Api-Key"],
 )
 
 # Initialize database and cache on startup
@@ -263,14 +263,14 @@ async def report_issue(request: ReportIssueRequest, x_gemini_api_key: Optional[s
             request.longitude
         )
         
-        # Step 6: Check AI response cache
+        # Step 6: Check AI response cache (only if custom API key is NOT provided)
         print(f"💾 Checking AI response cache...")
         analysis = None
-        if image_hash and description_hash:
+        if image_hash and description_hash and not x_gemini_api_key:
             analysis = get_ai_response_from_cache(image_hash, description_hash)
-        
-        # Step 7: If not cached, check rate limit and call Gemini
-        if not analysis:
+        elif x_gemini_api_key:
+            print(f"🔑 Custom Gemini API Key detected — bypassing cache for live Gemini call")
+
             try:
                 print(f"🚦 Checking rate limit...")
                 check_rate_limit("gemini")

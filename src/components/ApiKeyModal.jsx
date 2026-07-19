@@ -6,23 +6,32 @@ export default function ApiKeyModal({ isOpen, onClose, onSaveKey, onUseDemoMode 
   const [apiKey, setApiKey] = useState(sessionStorage.getItem('GEMINI_API_KEY') || '')
   const [saved, setSaved] = useState(false)
 
+  // Re-sync input state whenever modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setApiKey(sessionStorage.getItem('GEMINI_API_KEY') || '')
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
   const handleSave = (e) => {
     e.preventDefault()
-    if (apiKey.trim()) {
-      sessionStorage.setItem('GEMINI_API_KEY', apiKey.trim())
-      onSaveKey(apiKey.trim())
+    const trimmed = apiKey.trim()
+    if (trimmed) {
+      sessionStorage.setItem('GEMINI_API_KEY', trimmed)
+      onSaveKey(trimmed)
       setSaved(true)
       setTimeout(() => {
         setSaved(false)
         onClose()
-      }, 800)
+      }, 500)
     }
   }
 
   const handleDemo = () => {
     sessionStorage.removeItem('GEMINI_API_KEY')
+    setApiKey('')
     onUseDemoMode()
     onClose()
   }
